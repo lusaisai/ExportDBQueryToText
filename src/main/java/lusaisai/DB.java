@@ -1,5 +1,10 @@
 package lusaisai;
 
+import com.opencsv.CSVWriterBuilder;
+import com.opencsv.ICSVParser;
+import com.opencsv.ICSVWriter;
+import com.opencsv.ResultSetHelperService;
+
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -10,7 +15,10 @@ import java.util.ArrayList;
 
 public class DB {
     private final Connection con;
+    private final String dateFormat = "yyyy-MM-dd";
+    private final String timestampFormat = "yyyy-MM-dd HH:mm:ss";
     private String delimiter = ",";
+
 
     public DB(String DBURL) throws SQLException {
         this.con = DriverManager.getConnection(DBURL);
@@ -22,6 +30,28 @@ public class DB {
 
     public void setDelimiter(String delimiter) {
         this.delimiter = delimiter;
+    }
+
+    public void queryToCSV(String query, String filePath, boolean withHeader) throws IOException, SQLException {
+        ResultSetHelperService service = new ResultSetHelperService();
+        service.setDateFormat(dateFormat);
+        service.setDateTimeFormat(timestampFormat);
+        Writer writer = Files.newBufferedWriter(Paths.get(filePath), StandardCharsets.UTF_8);
+        ICSVWriter csvWriter = new CSVWriterBuilder(writer)
+                .withSeparator(getDelimiter().charAt(0))
+                .withQuoteChar(ICSVParser.DEFAULT_QUOTE_CHARACTER)
+                .withEscapeChar(ICSVParser.DEFAULT_ESCAPE_CHARACTER)
+                .withLineEnd(ICSVWriter.DEFAULT_LINE_END)
+                .withResultSetHelper(service)
+                .build();
+
+        Statement stmt = con.createStatement();
+        ResultSet rs = stmt.executeQuery(query);
+
+        csvWriter.writeAll(rs, withHeader);
+
+        writer.flush();
+        writer.close();
     }
 
     public void queryToText(String query, String filePath, boolean withHeader) throws IOException, SQLException {
@@ -54,9 +84,9 @@ public class DB {
             ArrayList<String> row = new ArrayList<>();
             for (int i = 1; i <= rsmd.getColumnCount(); i++) {
                 if (rsmd.getColumnType(i) == Types.DATE) {
-                    row.add(new SimpleDateFormat("yyyy-MM-dd").format(rs.getDate(i)));
+                    row.add(new SimpleDateFormat(dateFormat).format(rs.getDate(i)));
                 } else if (rsmd.getColumnType(i) == Types.TIMESTAMP) {
-                    row.add(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(rs.getTimestamp(i)));
+                    row.add(new SimpleDateFormat(timestampFormat).format(rs.getTimestamp(i)));
                 } else {
                     row.add(rs.getString(i));
                 }

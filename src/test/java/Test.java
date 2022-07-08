@@ -26,4 +26,15 @@ public class Test {
         this.db.queryToText("select * from stock_estimate_cache limit 20", "C:\\Users\\lusaisai\\Downloads\\funds_2.txt", false);
         this.db.queryToText("select to_char(UPDATE_TS, 'DD-MON-YYYY HH24:MI:SS') as update_ts from stock_estimate_cache limit 20", "C:\\Users\\lusaisai\\Downloads\\funds_3.txt", false);
     }
+
+    @org.junit.Test
+    public void testCSV() throws SQLException, IOException {
+        this.db.queryToCSV("select * from stock_estimate_cache",
+                "C:\\Users\\lusaisai\\Downloads\\estimates.csv",
+                true);
+        this.db.setDelimiter("|");
+        this.db.queryToCSV("select * from stock_estimate_cache",
+                "C:\\Users\\lusaisai\\Downloads\\estimates2.csv",
+                true);
+        }
 }
